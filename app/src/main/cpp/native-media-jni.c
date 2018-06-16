@@ -175,6 +175,9 @@ static XAresult AndroidBufferQueueCallback(
      * */
     //bytesRead = fread(pBufferData, 1, BUFFER_SIZE, file);
     bytesRead = read(sock, pBufferData, BUFFER_SIZE);
+    LOGV("bytesRead dans AndroidBufferQueueCallback = %u", bytesRead);
+    
+    
     
     if (bytesRead > 0) {
         if ((bytesRead % MPEG2_TS_PACKET_SIZE) != 0) {
@@ -297,7 +300,7 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
      */
     //bytesRead = fread(dataCache, 1, BUFFER_SIZE * NB_BUFFERS, file);
     bytesRead = read(sock, dataCache, BUFFER_SIZE * NB_BUFFERS);
-    
+    LOGV("bytesRead dans enqueueInitialBuffers = %u", bytesRead);
     
     
     if (bytesRead <= 0) {
