@@ -41,6 +41,7 @@
 
 //Vincent pour les sockets
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 
 // engine interfaces
@@ -334,6 +335,9 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
         jclass clazz, jobject assetMgr, jstring filename)
 {
     XAresult res;
+    
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, '0', sizeof(serv_addr));
 
     android_fopen_set_asset_manager(AAssetManager_fromJava(env, assetMgr));
     // convert Java string to UTF-8
@@ -355,6 +359,16 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
 		LOGV("Erreur à la création du socket");
 
 	LOGV("socket créé, numéro=%i", sock);
+	
+	serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(8080);
+    //comment passer de l'IP type 127.0.0.1 à l'integer?
+    serv_addr.sin_addr.s_addr = inet_addr("192.168.1.12");
+    
+	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+		{
+		LOGV("connect() a planté");
+		}
     
     
     
