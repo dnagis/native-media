@@ -168,7 +168,14 @@ static XAresult AndroidBufferQueueCallback(
 
     // note we do call fread from multiple threads, but never concurrently
     size_t bytesRead;
-    bytesRead = fread(pBufferData, 1, BUFFER_SIZE, file);
+    /**
+     * Vincent read() sur sock au lieu de fread
+     * 
+     * 
+     * */
+    //bytesRead = fread(pBufferData, 1, BUFFER_SIZE, file);
+    bytesRead = read(sock, pBufferData, BUFFER_SIZE);
+    
     if (bytesRead > 0) {
         if ((bytesRead % MPEG2_TS_PACKET_SIZE) != 0) {
             LOGV("Dropping last packet because it is not whole");
@@ -284,7 +291,15 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
      * and then check that the number of elements is a multiple of the packet size.
      */
     size_t bytesRead;
-    bytesRead = fread(dataCache, 1, BUFFER_SIZE * NB_BUFFERS, file);
+    /**
+     * Vincent: remplacer fread par read
+     * 
+     */
+    //bytesRead = fread(dataCache, 1, BUFFER_SIZE * NB_BUFFERS, file);
+    bytesRead = read(sock, dataCache, BUFFER_SIZE * NB_BUFFERS);
+    
+    
+    
     if (bytesRead <= 0) {
         // could be premature EOF or I/O error
         return JNI_FALSE;
@@ -370,7 +385,7 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
 		LOGV("connect() a planté");
 		}
     
-    
+    //read(sock, buffer, 1024);
     
 
     // configure data source
