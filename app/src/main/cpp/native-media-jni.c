@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <string.h>
 
+
+
 // for __android_log_print(ANDROID_LOG_INFO, "YourApp", "formatted message");
 //*****vincent <--> adb logcat -s "NativeMedia"*****
 #include <android/log.h>
@@ -43,6 +45,10 @@
 #include <android/native_window_jni.h>
 #include <android/asset_manager_jni.h>
 #include "android_fopen.h"
+
+//Vincent pour les sockets
+#include <sys/socket.h>
+
 
 // engine interfaces
 static XAObjectItf engineObject = NULL;
@@ -82,6 +88,9 @@ static char dataCache[BUFFER_SIZE * NB_BUFFERS];
 
 // handle of the file to play
 static FILE *file;
+
+//vincent socket
+static int sock;
 
 // has the app reached the end of the file
 static jboolean reachedEof = JNI_FALSE;
@@ -344,7 +353,18 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
         return JNI_FALSE;
     }
     
-    LOGV("debut de Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer");
+    //Vincent sockets
+    LOGV("début de Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer");
+    
+    sock = 0;
+    
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) //je mets un close(sock) dans Java_com_example_nativemedia_NativeMedia_shutdown
+		LOGV("Erreur à la création du socket");
+
+	LOGV("socket créé, numéro=%i", sock);
+    
+    
+    
 
     // configure data source
     XADataLocator_AndroidBufferQueue loc_abq = { XA_DATALOCATOR_ANDROIDBUFFERQUEUE, NB_BUFFERS };
@@ -488,6 +508,10 @@ void Java_com_example_nativemedia_NativeMedia_shutdown(JNIEnv* env, jclass clazz
         fclose(file);
         file = NULL;
     }
+    
+    //vincent socket
+    LOGV("on va fermer le socket numéro %i", sock);
+    close(sock);
 
     // make sure we don't leak native windows
     if (theNativeWindow != NULL) {
