@@ -4,6 +4,10 @@
  * 
  * Hacking de native-media NDK de chez googlesamples, pour obtenir les bytes en provenance d'un socket plutôt que d'une file
  * 
+ * Conversion ffmpeg pour matcher le format du sample NativeMedia.ts
+ * ffmpeg -y -ss 4000 -i ted.m2ts -t 20 -c copy cut.m2ts
+ * ffmpeg -y -i cut.m2ts -c:v libx264 -b:v 1300K -profile:v baseline -c:a aac -ar 44100 -b:a 62k output.ts
+ * 
  * 
  */
 
@@ -64,14 +68,14 @@ static XAVolumeItf             playerVolItf = NULL;
 // video sink for the player
 static ANativeWindow* theNativeWindow;
 
-// number of buffers in our buffer queue, an arbitrary number
-#define NB_BUFFERS 8
+// number of buffers in our buffer queue, an arbitrary number (8)
+#define NB_BUFFERS 2
 
 // we're streaming MPEG-2 transport stream data, operate on transport stream block size
 #define MPEG2_TS_PACKET_SIZE 188
 
-// number of MPEG-2 transport stream blocks per buffer, an arbitrary number
-#define PACKETS_PER_BUFFER 10
+// number of MPEG-2 transport stream blocks per buffer, an arbitrary number (10)
+#define PACKETS_PER_BUFFER 3
 
 // determines how much memory we're dedicating to memory caching
 #define BUFFER_SIZE (PACKETS_PER_BUFFER*MPEG2_TS_PACKET_SIZE)
