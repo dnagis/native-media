@@ -1,6 +1,9 @@
 /**
  * git add app/src/main/cpp/native-media-jni.c
  * 
+ * git add app/src/main/java/com/example/nativemedia/NativeMedia.java
+ * git add app/src/main/res/layout/main.xml
+ * 
  * 
  * Hacking de native-media NDK de chez googlesamples, pour obtenir les bytes en provenance d'un socket plutôt que d'une file
  * 
@@ -335,16 +338,18 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
 	    LOGV("on vient de read() on a récup %i bytes", small_chunk_pour_mtu_du_wifi);
 	    
 		    
-		    if (small_chunk_pour_mtu_du_wifi <= 0) {
+		if (small_chunk_pour_mtu_du_wifi <= 0) {
 		        // could be premature EOF or I/O error
 		        return JNI_FALSE;
 		    }
 	    
-			if ((small_chunk_pour_mtu_du_wifi % MPEG2_TS_PACKET_SIZE) != 0) {
+		if ((small_chunk_pour_mtu_du_wifi % MPEG2_TS_PACKET_SIZE) != 0) {
 			LOGV("*****************On a du packet foireux, je vire*********************");
-			} else {
-			bytesRead += small_chunk_pour_mtu_du_wifi;
-			}
+			return JNI_FALSE; //tests: un seul packet foireux et l'appli plante...
+			} 
+			
+		bytesRead += small_chunk_pour_mtu_du_wifi;
+			
 	    
 
 	    passage += 1;

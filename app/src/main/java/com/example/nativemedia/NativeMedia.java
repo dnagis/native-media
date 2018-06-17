@@ -45,7 +45,7 @@ public class NativeMedia extends Activity {
     VideoSink mNativeMediaPlayerVideoSink;
 
     SurfaceHolderVideoSink mSurfaceHolder1VideoSink, mSurfaceHolder2VideoSink;
-    GLViewVideoSink mGLView1VideoSink, mGLView2VideoSink;
+    //GLViewVideoSink mGLView1VideoSink, mGLView2VideoSink;
 
     AssetManager  assetMgr;
 
@@ -57,8 +57,8 @@ public class NativeMedia extends Activity {
 
         assetMgr = getResources().getAssets();
 
-        mGLView1 = (MyGLSurfaceView) findViewById(R.id.glsurfaceview1);
-        mGLView2 = (MyGLSurfaceView) findViewById(R.id.glsurfaceview2);
+        //mGLView1 = (MyGLSurfaceView) findViewById(R.id.glsurfaceview1);
+        //mGLView2 = (MyGLSurfaceView) findViewById(R.id.glsurfaceview2);
 
         // initialize native media system
         createEngine();
@@ -85,7 +85,7 @@ public class NativeMedia extends Activity {
 
         });
 
-        // set up the Surface 2 video sink
+        /** set up the Surface 2 video sink
         mSurfaceView2 = (SurfaceView) findViewById(R.id.surfaceview2);
         mSurfaceHolder2 = mSurfaceView2.getHolder();
 
@@ -105,7 +105,7 @@ public class NativeMedia extends Activity {
                 Log.v(TAG, "surfaceDestroyed");
             }
 
-        });
+        });**/
 
         // create Java media player
         mMediaPlayer = new MediaPlayer();
@@ -178,7 +178,8 @@ public class NativeMedia extends Activity {
                         mSurfaceHolder2VideoSink = new SurfaceHolderVideoSink(mSurfaceHolder2);
                     }
                     mSelectedVideoSink = mSurfaceHolder2VideoSink;
-                } else if ("SurfaceTexture 1".equals(mSinkString)) {
+                } 
+                /**else if ("SurfaceTexture 1".equals(mSinkString)) {
                     if (mGLView1VideoSink == null) {
                         mGLView1VideoSink = new GLViewVideoSink(mGLView1);
                     }
@@ -188,7 +189,9 @@ public class NativeMedia extends Activity {
                         mGLView2VideoSink = new GLViewVideoSink(mGLView2);
                     }
                     mSelectedVideoSink = mGLView2VideoSink;
-                }
+                }**/
+                
+                
             }
 
             public void onNothingSelected(AdapterView parent) {
@@ -203,7 +206,7 @@ public class NativeMedia extends Activity {
 
         // Java MediaPlayer start/pause
 
-        ((Button) findViewById(R.id.start_java)).setOnClickListener(new View.OnClickListener() {
+        /**((Button) findViewById(R.id.start_java)).setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View view) {
                 if (mJavaMediaPlayerVideoSink == null) {
@@ -233,7 +236,7 @@ public class NativeMedia extends Activity {
                 }
             }
 
-        });
+        });**/
 
         // native MediaPlayer start/pause
 
@@ -271,6 +274,8 @@ public class NativeMedia extends Activity {
 
         });
 
+
+		/**
         // Java MediaPlayer rewind
 
         ((Button) findViewById(R.id.rewind_java)).setOnClickListener(new View.OnClickListener() {
@@ -293,7 +298,7 @@ public class NativeMedia extends Activity {
                 }
             }
 
-        });
+        }); **/
 
     }
 
@@ -303,16 +308,16 @@ public class NativeMedia extends Activity {
     {
         mIsPlayingStreaming = false;
         setPlayingStreamingMediaPlayer(false);
-        mGLView1.onPause();
-        mGLView2.onPause();
+        //mGLView1.onPause();
+        //mGLView2.onPause();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mGLView1.onResume();
-        mGLView2.onResume();
+        //mGLView1.onResume();
+        //mGLView2.onResume();
     }
 
     /** Called when the activity is about to be destroyed. */
@@ -323,7 +328,7 @@ public class NativeMedia extends Activity {
         super.onDestroy();
     }
 
-    private MyGLSurfaceView mGLView1, mGLView2;
+    //private MyGLSurfaceView mGLView1, mGLView2;
 
     /** Native methods, implemented in jni folder */
     public static native void createEngine();
