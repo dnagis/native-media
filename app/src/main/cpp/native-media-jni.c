@@ -4,6 +4,9 @@
  * 
  * Hacking de native-media NDK de chez googlesamples, pour obtenir les bytes en provenance d'un socket plutôt que d'une file
  * 
+ * de l'autre côté 
+ * socat OPEN:output.ts TCP-LISTEN:8080
+ * 
  * Conversion ffmpeg pour matcher le format du sample NativeMedia.ts
  * ffmpeg -y -ss 4000 -i ted.m2ts -t 20 -c copy cut.m2ts
  * ffmpeg -y -i cut.m2ts -c:v libx264 -b:v 1300K -profile:v baseline -c:a aac -ar 44100 -b:a 62k output.ts
@@ -47,6 +50,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+//Vincent pour sleep()
+#include <unistd.h>
+
 
 // engine interfaces
 static XAObjectItf engineObject = NULL;
@@ -69,13 +75,13 @@ static XAVolumeItf             playerVolItf = NULL;
 static ANativeWindow* theNativeWindow;
 
 // number of buffers in our buffer queue, an arbitrary number (8)
-#define NB_BUFFERS 2
+#define NB_BUFFERS 8
 
 // we're streaming MPEG-2 transport stream data, operate on transport stream block size
 #define MPEG2_TS_PACKET_SIZE 188
 
 // number of MPEG-2 transport stream blocks per buffer, an arbitrary number (10)
-#define PACKETS_PER_BUFFER 3
+#define PACKETS_PER_BUFFER 10
 
 // determines how much memory we're dedicating to memory caching
 #define BUFFER_SIZE (PACKETS_PER_BUFFER*MPEG2_TS_PACKET_SIZE)
@@ -178,7 +184,7 @@ static XAresult AndroidBufferQueueCallback(
      * 
      * */
     //bytesRead = fread(pBufferData, 1, BUFFER_SIZE, file);
-    bytesRead = read(sock, pBufferData, BUFFER_SIZE);
+    bytesRead = read(sock, pBufferData, 752); //le MTU en wifi est de 1500, on utilise plutôt MPEG2_TS_PACKET_SIZE x 4
     LOGV("bytesRead dans AndroidBufferQueueCallback = %u", bytesRead);
     
     
@@ -297,23 +303,62 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
      * fread returns units of "elements" not bytes, so we ask for 1-byte elements
      * and then check that the number of elements is a multiple of the packet size.
      */
-    size_t bytesRead;
+    size_t bytesRead, small_chunk_pour_mtu_du_wifi;
+
+
+    int passage = 0;
+    
     /**
      * Vincent: remplacer fread par read
+     * bloque souvent: peut être parce que avec le MTU j'ai été obliqé de baisser BUFFER_SIZE et NB_BUFFERS
+     * pour que bytesread < 1500.
+     * static char dataCache[BUFFER_SIZE * NB_BUFFERS];
+     * 
+     * le but est de remplir datacache avec des read() de longueur < MTU
      * 
      */
     //bytesRead = fread(dataCache, 1, BUFFER_SIZE * NB_BUFFERS, file);
-    bytesRead = read(sock, dataCache, BUFFER_SIZE * NB_BUFFERS);
-    LOGV("bytesRead dans enqueueInitialBuffers = %u", bytesRead);
+    //bytesRead = read(sock, dataCache, BUFFER_SIZE * NB_BUFFERS);
+    //LOGV("bytesRead dans enqueueInitialBuffers = %u", bytesRead);
+    
+    LOGV("on va rentrer dans la boucle...");
+    
+    for (bytesRead = 0;  bytesRead < (BUFFER_SIZE * NB_BUFFERS);) // (80 X 188)
+    
+    {  
+    
+	    LOGV("début de la boucle, bytesRead = %i", bytesRead);
+	    
+	    
+	    small_chunk_pour_mtu_du_wifi = read(sock, dataCache + bytesRead, 752); //752 = 188 * 4
+	    
+	    LOGV("on vient de read() on a récup %i bytes", small_chunk_pour_mtu_du_wifi);
+	    
+		    
+		    if (small_chunk_pour_mtu_du_wifi <= 0) {
+		        // could be premature EOF or I/O error
+		        return JNI_FALSE;
+		    }
+	    
+			if ((small_chunk_pour_mtu_du_wifi % MPEG2_TS_PACKET_SIZE) != 0) {
+			LOGV("On a du packet foireux, je vire");
+			} else {
+			bytesRead += small_chunk_pour_mtu_du_wifi;
+			}
+	    
+
+	    passage += 1;
+	    
+	    LOGV("fin de la boucle n°%i, bytesRead = %i", passage, bytesRead);
+	    
+	    usleep(500); //si je fais pas ça j'ai plein de fois des packets trop courts: 696 au lieu de 752
+    
+	}
     
     
-    if (bytesRead <= 0) {
-        // could be premature EOF or I/O error
-        return JNI_FALSE;
-    }
-    if ((bytesRead % MPEG2_TS_PACKET_SIZE) != 0) {
-        LOGV("Dropping last packet because it is not whole");
-    }
+
+    
+    
     size_t packetsRead = bytesRead / MPEG2_TS_PACKET_SIZE;
     LOGV("Initially queueing %zu packets", packetsRead);
 
@@ -378,7 +423,10 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
     sock = 0;
     
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) //je mets un close(sock) dans Java_com_example_nativemedia_NativeMedia_shutdown
+		{
 		LOGV("Erreur à la création du socket");
+		return JNI_FALSE;
+		}
 
 	LOGV("socket créé, numéro=%i", sock);
 	
@@ -390,6 +438,7 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
 	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 		{
 		LOGV("connect() a planté");
+		return JNI_FALSE;
 		}
     
     //read(sock, buffer, 1024);
