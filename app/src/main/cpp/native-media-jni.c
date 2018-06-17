@@ -341,7 +341,7 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
 		    }
 	    
 			if ((small_chunk_pour_mtu_du_wifi % MPEG2_TS_PACKET_SIZE) != 0) {
-			LOGV("On a du packet foireux, je vire");
+			LOGV("*****************On a du packet foireux, je vire*********************");
 			} else {
 			bytesRead += small_chunk_pour_mtu_du_wifi;
 			}
@@ -406,16 +406,16 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
     struct sockaddr_in serv_addr;
     memset(&serv_addr, '0', sizeof(serv_addr));
 
-    android_fopen_set_asset_manager(AAssetManager_fromJava(env, assetMgr));
+    //android_fopen_set_asset_manager(AAssetManager_fromJava(env, assetMgr));
     // convert Java string to UTF-8
-    const char *utf8 = (*env)->GetStringUTFChars(env, filename, NULL);
-    assert(NULL != utf8);
+    //const char *utf8 = (*env)->GetStringUTFChars(env, filename, NULL);
+    //assert(NULL != utf8);
 
-    // open the file to play
+    /* open the file to play
     file = android_fopen(utf8, "rb");
     if (file == NULL) {
         return JNI_FALSE;
-    }
+    }*/
     
     //Vincent sockets
     LOGV("début de Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer");
@@ -441,8 +441,7 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
 		return JNI_FALSE;
 		}
     
-    //read(sock, buffer, 1024);
-    
+   
 
     // configure data source
     XADataLocator_AndroidBufferQueue loc_abq = { XA_DATALOCATOR_ANDROIDBUFFERQUEUE, NB_BUFFERS };
@@ -480,7 +479,7 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
     assert(XA_RESULT_SUCCESS == res);
 
     // release the Java string and UTF-8
-    (*env)->ReleaseStringUTFChars(env, filename, utf8);
+    //(*env)->ReleaseStringUTFChars(env, filename, utf8);
 
     // realize the player
     res = (*playerObj)->Realize(playerObj, XA_BOOLEAN_FALSE);
@@ -581,11 +580,11 @@ void Java_com_example_nativemedia_NativeMedia_shutdown(JNIEnv* env, jclass clazz
         engineEngine = NULL;
     }
 
-    // close the file
+    /* close the file
     if (file != NULL) {
         fclose(file);
         file = NULL;
-    }
+    }*/
     
     //vincent socket
     LOGV("on va fermer le socket numéro %i", sock);
