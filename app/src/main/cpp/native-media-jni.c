@@ -10,9 +10,12 @@
  * de l'autre côté 
  * socat OPEN:output.ts TCP-LISTEN:8080
  * 
- * Conversion ffmpeg pour matcher le format du sample NativeMedia.ts
+ * #Conversion ffmpeg pour matcher le format du sample NativeMedia.ts
  * ffmpeg -y -ss 4000 -i ted.m2ts -t 20 -c copy cut.m2ts
  * ffmpeg -y -i cut.m2ts -c:v libx264 -b:v 1300K -profile:v baseline -c:a aac -ar 44100 -b:a 62k output.ts
+ * 
+ * #Testsrc2 de ffmpeg et du anullsrc pour l'audio
+ * ffmpeg -y -f lavfi -i testsrc2 -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t 5 -c:a aac -c:v libx264 -b:v 1300K -profile:v baseline testsrc_noaudio.ts
  * 
  * 
  */
