@@ -595,7 +595,7 @@ void Java_com_example_nativemedia_NativeMedia_shutdown(JNIEnv* env, jclass clazz
     }*/
     
     //vincent socket
-    LOGV("on va fermer le socket numéro %i", sock);
+    LOGV("on va fermer le socket numéro  %i", sock);
     close(sock);
 
     // make sure we don't leak native windows
