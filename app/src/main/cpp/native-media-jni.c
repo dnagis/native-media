@@ -9,11 +9,13 @@
  * 
  * Première version: TCP, côté send:socat OPEN:output.ts TCP-LISTEN:8080
  * 
+ * #en UDP à partir du pi, mais il faut que native media attende les données au moment où tu lances ffmpeg sur le pi, sinon bytes reçus mais ya jamais d'amorçage du player (un header qui est là qu'au début???)
+ * ffmpeg -re -f lavfi -i testsrc2 -an -c:v h264_omx -profile:v baseline -f mpegts udp://192.168.1.33:1234?pkt_size=752
  * 
  * #en UDP, à partir du NUC (vaapi)
  * ffmpeg -re -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc -f lavfi -i anullsrc -c:a aac -vf 'format=nv12,hwupload' -c:v h264_vaapi -b:v 5M -profile:v 578 -bf 0 -f mpegts udp://192.168.1.33:1234?pkt_size=752
  * 
- * #Testsrc2 de ffmpeg et du anullsrc pour l'audio
+ * #Testsrc2 de ffmpeg et du anullsrc pour l'audio (au final avec -an passe très bien en UDP, inutile de se faire chier)
  * ffmpeg -y -f lavfi -i testsrc2 -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t 5 -c:a aac -c:v libx264 -b:v 1300K -profile:v baseline testsrc_noaudio.ts
  * 
  * #Conversion ffmpeg pour matcher le format du sample NativeMedia.ts
