@@ -188,15 +188,16 @@ static XAresult AndroidBufferQueueCallback(
     // note we do call fread from multiple threads, but never concurrently
     size_t bytesRead;
     /**
-     * Vincent read() sur sock au lieu de fread
-     * 
-     * 
+     * Vincent read() ou recvfrom sur sock au lieu de fread
+     *  
      * */
     //bytesRead = fread(pBufferData, 1, BUFFER_SIZE, file);
-    bytesRead = read(sock, pBufferData, 752); //le MTU en wifi est de 1500, on utilise plutôt MPEG2_TS_PACKET_SIZE x 4
+    //bytesRead = read(sock, pBufferData, 752); //en TCP...le MTU en wifi est de 1500, on utilise plutôt MPEG2_TS_PACKET_SIZE x 4
+    
+    bytesRead = recvfrom(sock, pBufferData, 752, 0, NULL, NULL);    
     LOGV("bytesRead dans AndroidBufferQueueCallback = %u", bytesRead);
     
-    
+        
     
     if (bytesRead > 0) {
         if ((bytesRead % MPEG2_TS_PACKET_SIZE) != 0) {
@@ -312,7 +313,7 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
      * fread returns units of "elements" not bytes, so we ask for 1-byte elements
      * and then check that the number of elements is a multiple of the packet size.
      */
-    size_t bytesRead, small_chunk_pour_mtu_du_wifi;
+    size_t bytesRead, packet_size;
 
 
     int passage = 0;
@@ -330,39 +331,38 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
     //bytesRead = read(sock, dataCache, BUFFER_SIZE * NB_BUFFERS);
     //LOGV("bytesRead dans enqueueInitialBuffers = %u", bytesRead);
     
-    LOGV("on va rentrer dans la boucle...");
+    LOGV("enqueueInitialBuffers, on va rentrer dans la boucle...");
     
     for (bytesRead = 0;  bytesRead < (BUFFER_SIZE * NB_BUFFERS);) // (80 X 188)
     
     {  
     
-	    LOGV("début de la boucle, bytesRead = %i", bytesRead);
+	    LOGV("début de la boucle, bytesRead = %i", bytesRead);	    
 	    
+	    /*small_chunk_pour_mtu_du_wifi = read(sock, dataCache + bytesRead, 752); //752 = 188 * 4	    
+	    LOGV("on vient de read() on a récup %i bytes", small_chunk_pour_mtu_du_wifi);*/
 	    
-	    small_chunk_pour_mtu_du_wifi = read(sock, dataCache + bytesRead, 752); //752 = 188 * 4
-	    
-	    LOGV("on vient de read() on a récup %i bytes", small_chunk_pour_mtu_du_wifi);
-	    
+	    packet_size = recvfrom(sock, dataCache + bytesRead, 752, 0, NULL, NULL);
+	    LOGV("on vient de recvfrom() on a récup un packet de %i bytes", packet_size);
 		    
-		if (small_chunk_pour_mtu_du_wifi <= 0) {
+		if (packet_size <= 0) {
 		        // could be premature EOF or I/O error
+		        LOGV("*****************On a reçu un packet de taille %i, stop*********************", packet_size);
 		        return JNI_FALSE;
 		    }
 	    
-		if ((small_chunk_pour_mtu_du_wifi % MPEG2_TS_PACKET_SIZE) != 0) {
-			LOGV("*****************On a du packet foireux, je vire*********************");
+		if ((packet_size % MPEG2_TS_PACKET_SIZE) != 0) {
+			LOGV("*****************On a reçu un packet pas multiple de 188, stop*********************");
 			return JNI_FALSE; //tests: un seul packet foireux et l'appli plante...
 			} 
 			
-		bytesRead += small_chunk_pour_mtu_du_wifi;
-			
-	    
-
+		bytesRead += packet_size;
+		
 	    passage += 1;
 	    
 	    LOGV("fin de la boucle n°%i, bytesRead = %i", passage, bytesRead);
 	    
-	    usleep(500); //si je fais pas ça j'ai plein de fois des packets trop courts: 696 au lieu de 752
+	    //usleep(500); //si je fais pas ça j'ai plein de fois des packets trop courts: 696 au lieu de 752
     
 	}
     
@@ -408,14 +408,15 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
 }
 
 
-// create streaming media player
+// create streaming media player, création des sockets et bind ou connect
 jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNIEnv* env,
         jclass clazz, jobject assetMgr, jstring filename)
 {
     XAresult res;
     
-    struct sockaddr_in serv_addr;
-    memset(&serv_addr, '0', sizeof(serv_addr));
+    struct sockaddr_in si_me;
+    
+    //memset(&serv_addr, '0', sizeof(serv_addr));
 
     //android_fopen_set_asset_manager(AAssetManager_fromJava(env, assetMgr));
     // convert Java string to UTF-8
@@ -433,7 +434,7 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
     
     sock = 0;
     
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) //je mets un close(sock) dans Java_com_example_nativemedia_NativeMedia_shutdown
+    if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) //je mets un close(sock) dans Java_com_example_nativemedia_NativeMedia_shutdown
 		{
 		LOGV("Erreur à la création du socket");
 		return JNI_FALSE;
@@ -441,7 +442,22 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
 
 	LOGV("socket créé, numéro=%i", sock);
 	
-	serv_addr.sin_family = AF_INET;
+	// zero out the structure
+    memset((char *) &si_me, 0, sizeof(si_me));
+     
+    si_me.sin_family = AF_INET;
+    si_me.sin_port = htons(1234);
+    si_me.sin_addr.s_addr = htonl(INADDR_ANY);
+    
+	if (bind(sock, (struct sockaddr *)&si_me, sizeof(si_me)) < 0)
+	{
+	LOGV("bind() du socket a planté");
+	return JNI_FALSE;
+	}
+    
+	
+	/* Anciennement: TCP
+	 * serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(8080);
     //comment passer de l'IP type 127.0.0.1 à l'integer?
     serv_addr.sin_addr.s_addr = inet_addr("192.168.1.12");
@@ -451,7 +467,7 @@ jboolean Java_com_example_nativemedia_NativeMedia_createStreamingMediaPlayer(JNI
 		LOGV("connect() a planté");
 		return JNI_FALSE;
 		}
-    
+    */
    
 
     // configure data source
