@@ -7,18 +7,21 @@
  * 
  * Hacking de native-media NDK de chez googlesamples, pour obtenir les bytes en provenance d'un socket plutôt que d'une file
  * 
- * de l'autre côté 
- * socat OPEN:output.ts TCP-LISTEN:8080
+ * Première version: TCP, côté send:socat OPEN:output.ts TCP-LISTEN:8080
+ * 
+ * 
+ * #en UDP, à partir du NUC (vaapi)
+ * ffmpeg -re -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc -f lavfi -i anullsrc -c:a aac -vf 'format=nv12,hwupload' -c:v h264_vaapi -b:v 5M -profile:v 578 -bf 0 -f mpegts udp://192.168.1.33:1234?pkt_size=752
+ * 
+ * #Testsrc2 de ffmpeg et du anullsrc pour l'audio
+ * ffmpeg -y -f lavfi -i testsrc2 -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t 5 -c:a aac -c:v libx264 -b:v 1300K -profile:v baseline testsrc_noaudio.ts
  * 
  * #Conversion ffmpeg pour matcher le format du sample NativeMedia.ts
  * ffmpeg -y -ss 4000 -i ted.m2ts -t 20 -c copy cut.m2ts
  * ffmpeg -y -i cut.m2ts -c:v libx264 -b:v 1300K -profile:v baseline -c:a aac -ar 44100 -b:a 62k output.ts
  * 
- * #Testsrc2 de ffmpeg et du anullsrc pour l'audio
- * ffmpeg -y -f lavfi -i testsrc2 -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t 5 -c:a aac -c:v libx264 -b:v 1300K -profile:v baseline testsrc_noaudio.ts
+
  * 
- * #envoyer à la volée en UDP, à partir du NUC (vaapi)
- * ffmpeg -re -vaapi_device /dev/dri/renderD128 -f lavfi -i testsrc -f lavfi -i anullsrc -c:a aac -vf 'format=nv12,hwupload' -c:v h264_vaapi -b:v 5M -profile:v 578 -bf 0 -f mpegts udp://192.168.1.33:1234?pkt_size=752
  * 
  * 
  */
