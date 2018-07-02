@@ -200,7 +200,7 @@ static XAresult AndroidBufferQueueCallback(
     //bytesRead = read(sock, pBufferData, 752); //en TCP...le MTU en wifi est de 1500, on utilise plutôt MPEG2_TS_PACKET_SIZE x 4
     
     bytesRead = recvfrom(sock, pBufferData, 752, 0, NULL, NULL);    
-    LOGV("bytesRead dans AndroidBufferQueueCallback = %u", bytesRead);
+    //LOGV("bytesRead dans AndroidBufferQueueCallback = %u", bytesRead);
     
         
     
@@ -342,13 +342,13 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
     
     {  
     
-	    LOGV("début de la boucle, bytesRead = %i", bytesRead);	    
+	    //LOGV("début de la boucle, bytesRead = %i", bytesRead);	    
 	    
 	    /*small_chunk_pour_mtu_du_wifi = read(sock, dataCache + bytesRead, 752); //752 = 188 * 4	    
 	    LOGV("on vient de read() on a récup %i bytes", small_chunk_pour_mtu_du_wifi);*/
 	    
 	    packet_size = recvfrom(sock, dataCache + bytesRead, 752, 0, NULL, NULL);
-	    LOGV("on vient de recvfrom() on a récup un packet de %i bytes", packet_size);
+	    //LOGV("on vient de recvfrom() on a récup un packet de %i bytes", packet_size);
 		    
 		if (packet_size <= 0) {
 		        // could be premature EOF or I/O error
@@ -365,7 +365,7 @@ static jboolean enqueueInitialBuffers(jboolean discontinuity)
 		
 	    passage += 1;
 	    
-	    LOGV("fin de la boucle n°%i, bytesRead = %i", passage, bytesRead);
+	    //LOGV("fin de la boucle n°%i, bytesRead = %i", passage, bytesRead);
 	    
 	    //usleep(500); //si je fais pas ça j'ai plein de fois des packets trop courts: 696 au lieu de 752
     
