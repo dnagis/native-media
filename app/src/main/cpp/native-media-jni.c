@@ -22,7 +22,7 @@
  * ffmpeg -y -ss 4000 -i ted.m2ts -t 20 -c copy cut.m2ts
  * ffmpeg -y -i cut.m2ts -c:v libx264 -b:v 1300K -profile:v baseline -c:a aac -ar 44100 -b:a 62k output.ts
  * 
-
+ * 
  * 
  * 
  * 
